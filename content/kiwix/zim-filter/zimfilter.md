@@ -68,19 +68,23 @@ from pprint import pprint
 FACTORY_REPO = '/opt/iiab/iiab-factory'
 PREFIX = '/ext/zims'
 
+# Check if the current_project file exists, and if not, exit
 current_project = FACTORY_REPO + '/content/kiwix/zim-filter/current_project'
 if not os.path.isfile(current_project):
     print(f'\"current_project\" file is missing: {current_project}')
     sys.exit(1)
+# Get the project name from the current_project file
 with open(current_project,'r') as fp:
     project_name = fp.read().strip().split('/')
     if len(project_name) > 0:
         prefix = project_name[:-1]
         project_name = project_name[-1]
+# Look for the default_config.yaml file for the project
 lookfor = f"{PREFIX}/{project_name}/default_config.yaml"
 dflt_cfg = f'{FACTORY_REPO}/content/kiwix/zim-filter/default_filter.yaml'
 yml = YAML()
 if not os.path.isfile(lookfor):
+    # If default_config.yaml doesn't exist, create one with default values
     with open(dflt_cfg,'r') as fp:
         cfg = yml.load(fp)
     cfg['PREFIX'] = PREFIX
@@ -88,9 +92,11 @@ if not os.path.isfile(lookfor):
     with open(lookfor,'w') as newfp:
         yml.dump(cfg,newfp) 
 else:
+    # If default_config.yaml exists, load the config
     with open(lookfor,'r') as fp:
         cfg = yml.load(fp)
 
+# Get various config options
 PROJECT_NAME = cfg['PROJECT_NAME']
 SOURCE_URL = cfg['SOURCE_URL']
 CACHE_DIR = PREFIX + '/youtube/cache'
