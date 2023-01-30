@@ -66,7 +66,7 @@ from pprint import pprint
 
 # Get the current project from it's pointer in iiab-factory repo
 FACTORY_REPO = '/opt/iiab/iiab-factory'
-PREFIX = '/ext/zims'
+PREFIX = 'ext/zims'
 
 # Check if the current_project file exists, and if not, exit
 current_project = FACTORY_REPO + '/content/kiwix/zim-filter/current_project'
