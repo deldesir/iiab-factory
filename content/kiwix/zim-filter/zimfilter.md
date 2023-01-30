@@ -197,8 +197,8 @@ subprocess.run(cmd,shell=True)
 
 
 ```python
-import yt_dlp
-ydl = yt_dlp.YoutubeDL()
+from yt_dlp import YoutubeDL
+ydl = YoutubeDL()
 print('Downloading metadata from Youtube')
 downloaded = 0
 skipped = 0
