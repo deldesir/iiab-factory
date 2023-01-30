@@ -57,7 +57,7 @@ ln -s /home/<user name>/zimtest /library/www/html/zimtest
 # -*- coding: utf-8 -*-
 import os,sys
 import json
-import youtube_dl
+import yt_dlp
 import pprint as pprint
 from types import SimpleNamespace
 import subprocess
@@ -158,14 +158,14 @@ print('This is the PREFIX:%s'%PREFIX)
 
 ```python
 # First we need to get a current copy of the script
-cmd = '/bin/cp %s/content/kiwix/de-namespace.sh %s'%(cfg['FACTORY_REPO'],PREFIX)
+cmd = '/bin/cp %s/content/kiwix/zim-filter/de-namespace.sh %s'%(cfg['FACTORY_REPO'],PREFIX)
 subprocess.run(cmd,shell=True)
 ```
 
 
 
 
-    CompletedProcess(args='/bin/cp /opt/iiab/iiab-factory/content/kiwix/de-namespace.sh /ext/zims', returncode=1)
+    CompletedProcess(args='/bin/cp /opt/iiab/iiab-factory/content/kiwix//zim-filter/de-namespace.sh /ext/zims', returncode=1)
 
 
 
