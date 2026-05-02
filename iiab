@@ -143,19 +143,19 @@ clone-repos() {                        # PREREQ: 'apt update'
     if [ -d iiab ]; then
         echo -e "REPO EXISTS? Consider 'cd /opt/iiab/iiab; git pull'"
     else
-        git clone https://github.com/iiab/iiab
+        git clone https://github.com/deldesir/iiab
     fi
     echo
     if [ -d iiab-admin-console ]; then
         echo -e "REPO EXISTS? Consider 'cd /opt/iiab/iiab-admin-console; git pull'"
     else
-        git clone https://github.com/iiab/iiab-admin-console
+        git clone https://github.com/deldesir/iiab-admin-console
     fi
     echo
     if [ -d iiab-factory ]; then
         echo -e "REPO EXISTS? Consider 'cd /opt/iiab/iiab-factory; git pull'"
     else
-        git clone https://github.com/iiab/iiab-factory
+        git clone https://github.com/deldesir/iiab-factory
     fi
 }
 
@@ -408,7 +408,7 @@ else
         cp /opt/iiab/iiab/vars/$local_vars_src_file /etc/iiab/local_vars.yml
         echo
     else
-        wget -O /etc/iiab/local_vars.yml https://github.com/iiab/iiab/raw/master/vars/$local_vars_src_file
+        wget -O /etc/iiab/local_vars.yml https://github.com/deldesir/iiab/raw/master/vars/$local_vars_src_file
     fi
 
     if ! $($MFABT); then
