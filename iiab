@@ -330,8 +330,8 @@ if [ -f /etc/iiab/local_vars.yml ]; then
 else
     echo -e "\n\nInstalling Internet-in-a-Box requires /etc/iiab/local_vars.yml\n"
 
-    echo -e "PLEASE PICK (1) 🚵 SMALL (2) 🚢🚣 MEDIUM or (3) 🚂🚃🚃 LARGE (NEEDS 2+ GB RAM)."
-    echo -e "Or try (m) for 🚑 MEDICAL.\n"
+    echo -e "PLEASE PICK (d) 🌐 DELDESIR (1) 🚵 SMALL (2) 🚢🚣 MEDIUM or (3) 🚂🚃🚃 LARGE."
+    echo -e "Or try (m) for 🚑 MEDICAL.  Default: (d) DELDESIR with AI + CRM + SSL.\n"
 
     echo -e 'See "What services (IIAB apps) are suggested during installation?" and'
     echo -e '"What can I do with E-books and Internet-in-a-Box?" in https://FAQ.IIAB.IO\n'
@@ -339,7 +339,7 @@ else
     echo -e "WARNING: This Can Take More Than An Hour, depending on Internet speed, CPU,"
     echo -e "temperature, and the speed of your microSD card.\n"
 
-    echo -n "Please press a key — 1, 2, 3 or m: "
+    echo -n "Please press a key — d, 1, 2, 3 or m: "
     read -n 1 -r local_vars_size < /dev/tty
     echo
     case $local_vars_size in
@@ -362,7 +362,7 @@ else
             local_vars_src_file=local_vars_tiny.yml
             ;;
         *)
-            local_vars_src_file=local_vars_medium.yml
+            local_vars_src_file=local_vars_deldesir.yml
             ;;
     esac
 
