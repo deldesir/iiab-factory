@@ -126,6 +126,57 @@ check_user_pwd() {
 # https://github.com/iiab/maps/blob/master/osm-source/pages/viewer/scripts/iiab-install-map-region#L23-L39
 # https://github.com/iiab/iiab/blob/master/roles/openvpn/templates/iiab-support READS+WRITES TO local_vars.yml (INCL NON-BOOLEAN)
 
+TTY=${IIAB_TTY:-/dev/tty}    # answers come from the terminal; a file when testing
+
+fill_preset() {    # $1 = local_vars.yml. Fleet presets carry __PLACEHOLDERS__: ask for what only a
+    local f=$1 ans admin_pw erp_pw    # person knows (id, business, domain, address); generate the passwords.
+    grep -v '^\s*#' "$f" | grep -q '__[A-Z_]*__' || return 0    # placeholders outside comments
+    command -v openssl &> /dev/null || $APTPATH/apt -y install openssl
+    echo -e "\nA few answers finish this preset; the passwords are generated.\n"
+    if grep -q '__BOX_ID__' "$f"; then
+        while :; do
+            echo -n "  Box id given by 'fleet onboard' on the control plane (e.g. box-007): "; read -r ans < $TTY
+            [[ $ans =~ ^box-[0-9]{3}$ ]] && break
+            echo "  ids look like box-007"
+        done
+        sed -i "s/__BOX_ID__/$ans/g" "$f"
+    fi
+    if grep -q '__BUSINESS__' "$f"; then
+        while :; do
+            echo -n "  Business name shown in ERPNext (e.g. Shop SA): "; read -r ans < $TTY
+            ans=${ans//\"/}; [ -n "$ans" ] && break
+        done
+        sed -i "s|__BUSINESS__|$ans|g" "$f"
+    fi
+    if grep -q '__DOMAIN__' "$f"; then
+        while :; do
+            echo -n "  Public domain already pointing at this machine (e.g. shop.example.com): "; read -r ans < $TTY
+            [[ $ans =~ ^[a-z0-9.-]+\.[a-z]{2,}$ ]] && break
+            echo "  a bare lowercase domain, no http://"
+        done
+        sed -i "s/__DOMAIN__/$ans/g" "$f"
+    fi
+    if grep -q '__CERTBOT_EMAIL__' "$f"; then
+        while :; do
+            echo -n "  Address for certificate notices (e.g. you@example.com): "; read -r ans < $TTY
+            [[ $ans == *@*.* ]] && break
+        done
+        sed -i "s/__CERTBOT_EMAIL__/$ans/g" "$f"
+    fi
+    admin_pw=$(openssl rand -hex 12); erp_pw=$(openssl rand -hex 12)
+    sed -i "s/__ADMIN_PW__/$admin_pw/g; s/__ERP_ADMIN_PW__/$erp_pw/g" "$f"
+    chmod 600 "$f"
+    echo -e "\n  Generated passwords (kept in $f, mode 600). Store them in your password manager NOW:"
+    grep -q "^erpnext_admin_password: \"$erp_pw\"" "$f" && echo "    ERPNext Administrator : $erp_pw"
+    grep -q "^iiab_admin_published_pwd: \"$admin_pw\"" "$f" && echo "    iiab-admin (shell)    : $admin_pw"
+    echo
+    if grep -v '^\s*#' "$f" | grep -q '__[A-Z_]*__'; then
+        echo "  Placeholders still unfilled in $f: $(grep -v '^\s*#' "$f" | grep -o '__[A-Z_]*__' | sort -u | tr '\n' ' ')"
+        return 1
+    fi
+    return 0
+}
+
 iiab_var_value() {
     v1=$(grep "^$1:\s" /opt/iiab/iiab/vars/default_vars.yml 2> /dev/null | tail -1 | sed "s/^$1:\s\+//; s/#.*//; s/\s*$//; s/^\(['\"]\)\(.*\)\1$/\2/")
     v2=$(grep "^$1:\s" /etc/iiab/local_vars.yml 2> /dev/null | tail -1 | sed "s/^$1:\s\+//; s/#.*//; s/\s*$//; s/^\(['\"]\)\(.*\)\1$/\2/")
@@ -330,8 +381,13 @@ if [ -f /etc/iiab/local_vars.yml ]; then
 else
     echo -e "\n\nInstalling Internet-in-a-Box requires /etc/iiab/local_vars.yml\n"
 
-    echo -e "PLEASE PICK (d) 🌐 DELDESIR (1) 🚵 SMALL (2) 🚢🚣 MEDIUM or (3) 🚂🚃🚃 LARGE."
-    echo -e "Or try (m) for 🚑 MEDICAL.  Default: (d) DELDESIR with AI + CRM + SSL.\n"
+    echo -e "PLEASE PICK WHAT THIS MACHINE IS:"
+    echo -e "  (d) 🌐 DELDESIR  pipeline server: AI gateway, CRM, ERPNext, SSL (the full ecosystem)"
+    echo -e "  (h) 🏠 fleet HUB  control plane for a fleet of boxes (home/office computer, tailnet-only)"
+    echo -e "  (b) 🏪 fleet BOX  customer ERPNext / POS / storefront on a public domain with a certificate"
+    echo -e "  (x) 🧪 DEMO      throwaway ERPNext / POS / storefront with demo data (Administrator / demo1234)"
+    echo -e "  (1) 🚵 SMALL  (2) 🚢🚣 MEDIUM  (3) 🚂🚃🚃 LARGE  (m) 🚑 MEDICAL   upstream IIAB content presets"
+    echo -e "Default: (d). The fleet presets ask a few questions and generate their passwords.\n"
 
     echo -e 'See "What services (IIAB apps) are suggested during installation?" and'
     echo -e '"What can I do with E-books and Internet-in-a-Box?" in https://FAQ.IIAB.IO\n'
@@ -339,7 +395,7 @@ else
     echo -e "WARNING: This Can Take More Than An Hour, depending on Internet speed, CPU,"
     echo -e "temperature, and the speed of your microSD card.\n"
 
-    echo -n "Please press a key — d, 1, 2, 3 or m: "
+    echo -n "Please press a key — d, h, b, x, 1, 2, 3 or m: "
     read -n 1 -r local_vars_size < /dev/tty
     echo
     case $local_vars_size in
@@ -348,6 +404,18 @@ else
             ;;
         1)
             local_vars_src_file=local_vars_small.yml
+            ;;
+        2)
+            local_vars_src_file=local_vars_medium.yml
+            ;;
+        h)
+            local_vars_src_file=local_vars_fleet_hub.yml
+            ;;
+        b)
+            local_vars_src_file=local_vars_fleet_box.yml
+            ;;
+        x)
+            local_vars_src_file=local_vars_demo.yml
             ;;
         3)
             local_vars_src_file=local_vars_large.yml
@@ -410,11 +478,19 @@ else
     else
         wget -O /etc/iiab/local_vars.yml https://github.com/deldesir/iiab/raw/master/vars/$local_vars_src_file
     fi
+    fill_preset /etc/iiab/local_vars.yml || { echo -e "\nFill the placeholders left in /etc/iiab/local_vars.yml, then RUN 'sudo iiab' TO CONTINUE!\n"; exit 1; }
 
     if ! $($MFABT); then
-        echo -en "\nEdit /etc/iiab/local_vars.yml to customize your Internet-in-a-Box? [Y/n] "
-        read -n 1 -r ans < /dev/tty
-        echo
+        if [[ $local_vars_src_file == local_vars_fleet_* || $local_vars_src_file == local_vars_demo.yml ]]; then
+            echo -en "\nEdit /etc/iiab/local_vars.yml anyway before installing? [y/N] "
+            read -n 1 -r ans < $TTY
+            echo
+            [[ $ans == "y" || $ans == "Y" ]] && ans=y || ans=n
+        else
+            echo -en "\nEdit /etc/iiab/local_vars.yml to customize your Internet-in-a-Box? [Y/n] "
+            read -n 1 -r ans < $TTY
+            echo
+        fi
         if [[ $ans != "n" && $ans != "N" ]]; then    # ! [[ $ans =~ ^[nN]$ ]]
             echo -e "\n1) PLEASE RUN: sudo nano /etc/iiab/local_vars.yml\n"
 
