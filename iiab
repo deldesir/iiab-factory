@@ -388,7 +388,7 @@ else
     echo -e "  (d) 🌐 DELDESIR  pipeline server: AI gateway, CRM, ERPNext, SSL (the full ecosystem)"
     echo -e "  (h) 🏠 fleet HUB  control plane for a fleet of boxes (home/office computer, tailnet-only)"
     echo -e "  (b) 🏪 fleet BOX  customer ERPNext / POS / storefront on a public domain with a certificate"
-    echo -e "  (x) 🧪 DEMO      throwaway ERPNext / POS / storefront with demo data (Administrator / demo1234)"
+    echo -e "  (x) 🧪 DEMO      throwaway box with demo data: a shop (ERPNext / POS / storefront) or a hotel (+ Hospitality PMS)"
     echo -e "  (1) 🚵 SMALL  (2) 🚢🚣 MEDIUM  (3) 🚂🚃🚃 LARGE (NEEDS 2+ GB RAM)  (m) 🚑 MEDICAL   upstream presets"
     echo -e "Default: (d). The fleet presets ask a few questions and generate their passwords.\n"
 
@@ -418,7 +418,14 @@ else
             local_vars_src_file=local_vars_fleet_box.yml
             ;;
         x)
-            local_vars_src_file=local_vars_demo.yml
+            echo -en "\nDemo profile: (s) shop — ERPNext, POS, storefront  (h) hotel — the same plus the Hospitality PMS. [s/h] "
+            read -n 1 -r demo_profile < $TTY
+            echo
+            if [[ $demo_profile == "h" || $demo_profile == "H" ]]; then
+                local_vars_src_file=local_vars_demo_hotel.yml
+            else
+                local_vars_src_file=local_vars_demo.yml
+            fi
             ;;
         3)
             local_vars_src_file=local_vars_large.yml
@@ -485,7 +492,7 @@ else
     fill_preset /etc/iiab/local_vars.yml || { echo -e "\nFill the placeholders left in /etc/iiab/local_vars.yml, then RUN 'sudo iiab' TO CONTINUE!\n"; exit 1; }
 
     if ! $($MFABT); then
-        if [[ $local_vars_src_file == local_vars_fleet_* || $local_vars_src_file == local_vars_demo.yml ]]; then
+        if [[ $local_vars_src_file == local_vars_fleet_* || $local_vars_src_file == local_vars_demo*.yml ]]; then
             echo -en "\nEdit /etc/iiab/local_vars.yml anyway before installing? [y/N] "
             read -n 1 -r ans < $TTY
             echo
